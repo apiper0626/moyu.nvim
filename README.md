@@ -48,7 +48,7 @@ UTF-8 TXT 不依赖 Python；EPUB、HTML、DOCX、ODT、FB2 不需要 Calibre、
     { '<leader>mb', '<cmd>Moyu<cr>', desc = 'Moyu Mode 搜书' },
   },
   opts = {
-    book_dir = '~/Books', -- 可选；递归扫描支持的格式，默认是插件自带的 books/
+    book_dir = '~/Books/moyu', -- 独立书库，默认值；递归扫描支持的书籍格式
     width = 0.65,        -- 占编辑器宽度的比例
     height = 0.7,
     border = 'rounded',
@@ -71,7 +71,13 @@ UTF-8 TXT 不依赖 Python；EPUB、HTML、DOCX、ODT、FB2 不需要 Calibre、
 
 执行 `:Moyu`，输入书名或路径中的部分文字模糊搜索，Enter 打开，Esc / Ctrl-C 取消。候选包含 `book_dir` 下所有支持的书籍文件及仍可读取的阅读历史，显示书名、已有进度和完整路径，同名书籍也能区分。
 
-选中后直接进入 Moyu Mode。默认不配置 `book_dir` 即可搜到自带的《基督山伯爵》中文试读；已有自己的小说目录时，设置 `book_dir = '~/Books'`。
+选中后直接进入 Moyu Mode。默认书库为 `~/Books/moyu`，与插件安装目录分开，插件更新不会碰你的书。先创建目录，再放入自己的书籍：
+
+```sh
+mkdir -p ~/Books/moyu
+```
+
+仓库的 `books/` 仅保留试读示例，不作为默认个人书库；需要试读时将示例复制到上述目录。已有书籍目录可以通过 `book_dir` 指定。阅读历史保存在 Neovim 数据目录，独立于书库和插件代码。
 
 想直接续读而不搜索，使用 `:MoyuToggle`。显式指定路径仍可直接打开。旧命令 `:MoyuStealth` / `:MoyuStealthToggle` 继续兼容，因此已有本地插件加载配置无需修改即可使用新的主入口。
 

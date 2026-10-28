@@ -14,6 +14,6 @@ return {
       { '<leader>my', '<cmd>MoyuToggle<cr>', desc = 'Moyu Mode 续读 / 退出' },
       { '<leader>mb', '<cmd>Moyu<cr>', desc = 'Moyu Mode 搜书' },
     },
-    opts = {},
+    opts = { book_dir = '~/Books/moyu' },
   },
 }

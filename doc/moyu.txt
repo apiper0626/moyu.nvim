@@ -37,7 +37,7 @@ focus hides reading. Terminal focus reporting depends on the terminal.
 CONFIGURATION                                                  *moyu-setup*
 >
   require('moyu').setup({
-    book_dir = '~/Books',
+    book_dir = '~/Books/moyu',
     stealth = { lines = 3, keys_per_step = 3 },
     width = 0.65,
     height = 0.7,
@@ -45,7 +45,9 @@ CONFIGURATION                                                  *moyu-setup*
     title = ' 阅读 ',
   })
 <
-If book_dir is omitted, the bundled books directory is used.
+The default library is ~/Books/moyu, separate from the plugin installation.
+Create this directory and put your books there. Repository books/ contains
+only an optional demonstration text; copy it into your library to try it.
 
 PROGRESS                                                       *moyu-progress*
 

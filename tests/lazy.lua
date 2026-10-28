@@ -6,6 +6,7 @@ vim.g.mapleader = ' '
 local spec = dofile('integration/moyu.lua')
 assert(spec[1][1] == 'apiper0626/moyu.nvim' and spec[1].dir == nil)
 spec[1].dir = vim.fn.getcwd()
+spec[1].opts.book_dir = vim.fn.getcwd() .. '/books'
 require('lazy').setup({
   spec = spec,
   root = vim.fn.stdpath('data') .. '/lazy',

@@ -1,5 +1,7 @@
 # 测试书籍
 
+这里仅保存仓库的演示文本。个人书籍请放在默认书库 `~/Books/moyu`，不要放到插件安装目录。
+
 `基督山伯爵-中文试读.txt` 是依据 Project Gutenberg #1184 英文公版开篇重新翻译的中文节选，用于测试阅读交互；不是完整小说，也不冒充出版中译本。
 
 来源与英文全文：https://www.gutenberg.org/ebooks/1184
@@ -8,6 +10,13 @@
 
 ```vim
 :Moyu /path/to/moyu.nvim/books/基督山伯爵-中文试读.txt
+```
+
+也可以先复制到自己的书库，再用 `:Moyu` 搜索：
+
+```sh
+mkdir -p ~/Books/moyu
+cp -n /path/to/moyu.nvim/books/基督山伯爵-中文试读.txt ~/Books/moyu/
 ```
 
 未安装插件时，可在项目目录启动独立测试环境：

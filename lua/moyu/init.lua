@@ -1,6 +1,5 @@
 local M = {}
-local plugin_dir = vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':h:h:h')
-local config = { width = 0.65, height = 0.7, border = 'rounded', title = ' 阅读 ', book_dir = plugin_dir .. '/books' }
+local config = { width = 0.65, height = 0.7, border = 'rounded', title = ' 阅读 ', book_dir = '~/Books/moyu' }
 local state = { books = {} }
 local win, buf, current
 local state_file
@@ -201,7 +200,11 @@ function M.books(on_select)
     for _, path in ipairs(vim.fn.globpath(vim.fn.expand(config.book_dir), '**/*', false, true)) do add(path) end
   end
   table.sort(paths)
-  if #paths == 0 then notify('书架为空，请设置 book_dir 或使用 :Moyu /路径/书籍 打开文件'); return end
+  if #paths == 0 then
+    notify('书架为空，请将书籍放入 ' .. vim.fn.expand(config.book_dir)
+      .. '，或设置 book_dir / 使用 :Moyu /路径/书籍 打开文件')
+    return
+  end
   require('moyu.picker').select(paths, function(path)
     local item = state.books[path]
     return vim.fn.fnamemodify(path, ':t') .. (item and (' · 第 ' .. tostring(item.line) .. ' 行') or '') .. '  ' .. path
