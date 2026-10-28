@@ -9,6 +9,7 @@ local formats = require('moyu.formats')
 local request, pending = 0, nil
 local progress_info = require('moyu.progress')
 local current_lines
+local configured_lines = false
 
 local function valid_win() return win and vim.api.nvim_win_is_valid(win) end
 local function notify(message) vim.notify(message, vim.log.levels.WARN, { title = 'moyu.nvim' }) end
@@ -19,6 +20,10 @@ local function load()
   if vim.fn.filereadable(state_file) == 1 then
     local ok, value = pcall(function() return vim.json.decode(table.concat(vim.fn.readfile(state_file), '\n')) end)
     if ok and type(value) == 'table' and type(value.books) == 'table' then state = value end
+  end
+  local lines = type(state.settings) == 'table' and state.settings.lines or nil
+  if not configured_lines and type(lines) == 'number' and lines >= 1 and lines % 1 == 0 then
+    stealth_options.lines = lines
   end
 end
 
@@ -53,6 +58,7 @@ end
 
 function M.setup(opts)
   opts = vim.deepcopy(opts or {})
+  if opts.stealth and opts.stealth.lines ~= nil then configured_lines = true end
   stealth_options = vim.tbl_extend('force', stealth_options, opts.stealth or {})
   opts.stealth = nil
   config = vim.tbl_extend('force', config, opts or {})
@@ -106,7 +112,14 @@ function M.stealth(path)
       book.percent = progress_info.percent(lines, value)
       state.books[path], state.last = book, path
       save()
-    end, { history = M.history })
+    end, {
+      history = M.history,
+      lines_changed = function(value)
+        state.settings = type(state.settings) == 'table' and state.settings or {}
+        state.settings.lines = value
+        save()
+      end,
+    })
     if opened then current, current_lines = path, lines end
   end)
 end

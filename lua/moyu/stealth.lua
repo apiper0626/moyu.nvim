@@ -45,12 +45,24 @@ local function draw()
   s.page_lines = math.max(1, math.min(s.options.lines, s.above and above or below))
   local rows, next_pos = page(s)
   s.next_pos = next_pos
+  s.rendered_lines = #rows
   vim.api.nvim_buf_set_extmark(s.buf, ns, s.anchor, 0, {
     virt_lines = rows, virt_lines_above = s.above,
   })
 end
 
 function M.active() return session ~= nil end
+
+function M.adjust_lines(delta)
+  local s = session
+  if not s then return end
+  local value = math.max(1, s.options.lines + delta)
+  s.options.lines, s.presses = value, 0
+  draw()
+  if s.actions.lines_changed then s.actions.lines_changed(value) end
+  vim.api.nvim_echo({ { '阅读行数：' .. value .. '（当前显示 ' .. s.rendered_lines .. ' 行）', 'Comment' } }, false, {})
+  return value
+end
 
 function M.close()
   local s = session
@@ -125,7 +137,7 @@ function M.open(lines, pos, options, persist, actions)
   local s = { buf = buffer, win = window, lines = lines, pos = { line = line, char = char },
     options = options, persist = persist, keys = {}, maps = vim.api.nvim_buf_get_keymap(buffer, 'n'),
     modifiable = vim.bo[buffer].modifiable, comment = vim.bo[buffer].commentstring,
-    anchor = vim.api.nvim_win_get_cursor(window)[1] - 1, history = {}, presses = 0 }
+    anchor = vim.api.nvim_win_get_cursor(window)[1] - 1, history = {}, presses = 0, actions = actions or {} }
   session = s
   for _, map in ipairs(s.maps) do vim.keymap.del('n', map.lhs, { buffer = buffer }) end
   vim.bo[buffer].modifiable = false
@@ -152,6 +164,8 @@ function M.open(lines, pos, options, persist, actions)
   for _, key in ipairs({ 'j', '<CR>', '<Tab>', '<Right>', '<Down>', '<PageDown>', '<C-f>', '<C-d>', '<ScrollWheelDown>' }) do
     bind(key, M.next)
   end
+  for _, key in ipairs({ '+', '=', '<kPlus>' }) do bind(key, function() M.adjust_lines(1) end) end
+  for _, key in ipairs({ '-', '<kMinus>' }) do bind(key, function() M.adjust_lines(-1) end) end
   if actions and actions.history then bind('<F2>', actions.history) end
   bind('<leader>my', M.close)
   s.group = vim.api.nvim_create_augroup('MoyuStealthSession', { clear = true })

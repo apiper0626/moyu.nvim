@@ -28,6 +28,8 @@ During Moyu Mode:
   j, Down, Enter, Ctrl-D     Next segment.
   k, Up, Backspace, Ctrl-U   Previous segment.
   F2                        Reading history.
+  +, =, keypad +            Increase visible lines by one.
+  -, keypad -               Decrease visible lines by one (minimum one).
   Other printable ASCII     Advance every three presses (configurable).
 
 The source buffer is temporarily nonmodifiable. Book text is virtual text;
@@ -50,6 +52,8 @@ Create this directory and put your books there. Repository books/ contains
 only an optional demonstration text; copy it into your library to try it.
 Each segment defaults to 8 display lines. Small windows automatically use
 the available space above or below the cursor, with no skipped book text.
+Use +/= and - to change the desired line count without moving in the book.
+This preference survives restarts unless stealth.lines is set explicitly.
 
 PROGRESS                                                       *moyu-progress*
 
