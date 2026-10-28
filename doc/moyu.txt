@@ -38,7 +38,7 @@ CONFIGURATION                                                  *moyu-setup*
 >
   require('moyu').setup({
     book_dir = '~/Books/moyu',
-    stealth = { lines = 3, keys_per_step = 3 },
+    stealth = { lines = 8, keys_per_step = 3 },
     width = 0.65,
     height = 0.7,
     border = 'rounded',
@@ -48,6 +48,8 @@ CONFIGURATION                                                  *moyu-setup*
 The default library is ~/Books/moyu, separate from the plugin installation.
 Create this directory and put your books there. Repository books/ contains
 only an optional demonstration text; copy it into your library to try it.
+Each segment defaults to 8 display lines. Small windows automatically use
+the available space above or below the cursor, with no skipped book text.
 
 PROGRESS                                                       *moyu-progress*
 

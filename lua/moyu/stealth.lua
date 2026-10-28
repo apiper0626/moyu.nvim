@@ -15,7 +15,7 @@ local function page(s, limit)
   local prefix, suffix = s.comment:match('^(.-)%%s(.*)$')
   prefix, suffix = prefix or '// ', suffix or ''
   width = math.max(1, width - vim.fn.strdisplaywidth(prefix .. suffix))
-  for _ = 1, limit or s.options.lines do
+  for _ = 1, limit or s.page_lines or s.options.lines do
     if cursor.line > #s.lines then break end
     local text, cells = '', 0
     local line = s.lines[cursor.line]
@@ -36,9 +36,15 @@ end
 local function draw()
   local s = session
   if not s or not vim.api.nvim_buf_is_valid(s.buf) or not vim.api.nvim_win_is_valid(s.win) then return end
+  vim.api.nvim_buf_clear_namespace(s.buf, ns, 0, -1)
+  s.anchor = vim.api.nvim_win_get_cursor(s.win)[1] - 1
+  local cursor_row = vim.api.nvim_win_call(s.win, function() return vim.fn.winline() end)
+  local height = vim.api.nvim_win_get_height(s.win)
+  local below, above = math.max(0, height - cursor_row), math.max(0, cursor_row - 1)
+  s.above = below < s.options.lines and above > below
+  s.page_lines = math.max(1, math.min(s.options.lines, s.above and above or below))
   local rows, next_pos = page(s)
   s.next_pos = next_pos
-  vim.api.nvim_buf_clear_namespace(s.buf, ns, 0, -1)
   vim.api.nvim_buf_set_extmark(s.buf, ns, s.anchor, 0, {
     virt_lines = rows, virt_lines_above = s.above,
   })
@@ -87,11 +93,12 @@ function M.previous()
   else
     -- Resume has no in-memory history. Reconstruct the preceding display rows
     -- from nearby source lines, including wrapped paragraphs.
-    local cursor = { line = math.max(1, s.pos.line - s.options.lines), char = 0 }
+    local count = s.page_lines or s.options.lines
+    local cursor = { line = math.max(1, s.pos.line - count), char = 0 }
     local starts = {}
     while cursor.line < s.pos.line or (cursor.line == s.pos.line and cursor.char < s.pos.char) do
       starts[#starts + 1] = position(cursor)
-      if #starts > s.options.lines then table.remove(starts, 1) end
+      if #starts > count then table.remove(starts, 1) end
       local _, next_pos = page(setmetatable({ pos = cursor }, { __index = s }), 1)
       cursor = next_pos
     end
@@ -119,8 +126,6 @@ function M.open(lines, pos, options, persist, actions)
     options = options, persist = persist, keys = {}, maps = vim.api.nvim_buf_get_keymap(buffer, 'n'),
     modifiable = vim.bo[buffer].modifiable, comment = vim.bo[buffer].commentstring,
     anchor = vim.api.nvim_win_get_cursor(window)[1] - 1, history = {}, presses = 0 }
-  -- Keep the text visible when the cursor is close to the bottom of the viewport.
-  s.above = vim.fn.winline() + options.lines > vim.api.nvim_win_get_height(window)
   session = s
   for _, map in ipairs(s.maps) do vim.keymap.del('n', map.lhs, { buffer = buffer }) end
   vim.bo[buffer].modifiable = false

@@ -12,7 +12,7 @@ for test in smoke restore stealth stealth_restore; do run "$test"; done
 export XDG_DATA_HOME="$test_root/history"
 run history
 run history_restore
-for test in mode formats library; do
+for test in mode formats library viewport; do
   export XDG_DATA_HOME="$test_root/$test"
   run "$test"
 done

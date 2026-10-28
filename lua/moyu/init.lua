@@ -4,7 +4,7 @@ local state = { books = {} }
 local win, buf, current
 local state_file
 local stealth = require('moyu.stealth')
-local stealth_options = { lines = 3, keys_per_step = 3 }
+local stealth_options = { lines = 8, keys_per_step = 3 }
 local formats = require('moyu.formats')
 local request, pending = 0, nil
 local progress_info = require('moyu.progress')

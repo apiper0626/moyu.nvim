@@ -54,7 +54,7 @@ UTF-8 TXT 不依赖 Python；EPUB、HTML、DOCX、ODT、FB2 不需要 Calibre、
     border = 'rounded',
     title = ' 阅读 ',
     stealth = {
-      lines = 3,         -- 每段显示行数
+      lines = 8,         -- 默认每段 8 行，小窗口按光标上下可用空间自动缩减
       keys_per_step = 3, -- 每敲几次可打印 ASCII 键推进一段
     },
   },
