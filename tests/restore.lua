@@ -1,0 +1,8 @@
+vim.opt.rtp:prepend(vim.fn.getcwd())
+local reader = require('moyu')
+reader.open()
+assert(vim.api.nvim_win_get_config(0).relative == 'editor')
+assert(vim.api.nvim_win_get_cursor(0)[1] == 42)
+reader.close()
+print('PASS: 跨进程恢复阅读进度')
+vim.cmd('qa!')

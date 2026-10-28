@@ -1,0 +1,12 @@
+vim.opt.rtp:prepend(vim.fn.getcwd())
+local reader = require('moyu')
+local saved = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath('data') .. '/moyu/progress.json'), '\n'))
+local expected = saved.books[saved.last].stealth
+assert(expected.char > 0)
+reader.stealth()
+assert(require('moyu.stealth').active())
+reader.close()
+local restored = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath('data') .. '/moyu/progress.json'), '\n'))
+assert(vim.deep_equal(expected, restored.books[restored.last].stealth))
+print('PASS: 代码区阅读跨进程恢复段内字符位置')
+vim.cmd('qa!')

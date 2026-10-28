@@ -1,0 +1,12 @@
+*.log
+*.swp
+*.swo
+__pycache__/
+*.py[cod]
+.DS_Store
+/0
+/.release/
+/.agents/
+/.aws/
+/.codex/
+/doc/tags

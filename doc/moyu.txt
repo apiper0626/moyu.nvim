@@ -1,0 +1,70 @@
+*moyu.txt*                 Read books inside your code window
+
+MOYU.NVIM                                                     *moyu.nvim*
+
+Requires Neovim 0.9+. No Lua plugin dependency. fzf is optional.
+Python 3 is required for EPUB/HTML/DOCX/ODT/FB2 and encoding conversion.
+PDF uses pdftotext. Kindle formats use Calibre's ebook-convert.
+
+COMMANDS                                                       *moyu-commands*
+
+:Moyu [file]           Search books, or read the specified file in Moyu Mode.
+:MoyuToggle            Resume the last book, or exit Moyu Mode.
+:MoyuClose             Save progress and close reading.
+:MoyuHistory           Search reading history and resume the selected book.
+:MoyuBooks             Search configured books and reading history.
+:MoyuFloat [file]      Read in a floating window.
+:MoyuFloatToggle       Toggle the floating reader.
+
+:MoyuStealth and :MoyuStealthToggle are compatibility aliases.
+
+KEYS                                                           *moyu-keys*
+
+Configure <leader>my in your plugin manager to run :MoyuToggle.
+The plugin does not install a global key mapping by itself.
+
+During Moyu Mode:
+  <leader>my, Esc, Ctrl-C     Save and exit; restore the original mappings.
+  j, Down, Enter, Ctrl-D     Next segment.
+  k, Up, Backspace, Ctrl-U   Previous segment.
+  F2                        Reading history.
+  Other printable ASCII     Advance every three presses (configurable).
+
+The source buffer is temporarily nonmodifiable. Book text is virtual text;
+it is never written into code or undo history. Leaving the window or losing
+focus hides reading. Terminal focus reporting depends on the terminal.
+
+CONFIGURATION                                                  *moyu-setup*
+>
+  require('moyu').setup({
+    book_dir = '~/Books',
+    stealth = { lines = 3, keys_per_step = 3 },
+    width = 0.65,
+    height = 0.7,
+    border = 'rounded',
+    title = ' 阅读 ',
+  })
+<
+If book_dir is omitted, the bundled books directory is used.
+
+PROGRESS                                                       *moyu-progress*
+
+Every book is identified by its absolute source path. Moyu Mode saves both
+the extracted text line and Unicode character offset. Opening that book again
+resumes automatically, including after restarting Neovim. History is sorted
+by the last reading time. Records are stored under:
+  stdpath('data')/moyu/progress.json
+
+Moving or modifying a book can invalidate its old position. PDF positions
+refer to extracted text, not printed page numbers. Images, OCR, DRM and
+original rich formatting are not handled by the text reader.
+
+API                                                            *moyu-api*
+
+require('moyu').is_active()    Return whether Moyu Mode is active.
+require('moyu').status()       Return '鱼' while active, otherwise ''.
+
+User MoyuModeChanged fires on enter/exit with event.data.active and
+event.data.buffer. No personal history is included in these events.
+
+vim:tw=78:ts=8:noet:ft=help:norl:
