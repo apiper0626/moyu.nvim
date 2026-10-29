@@ -40,7 +40,7 @@ CONFIGURATION                                                  *moyu-setup*
 >
   require('moyu').setup({
     book_dir = '~/Books/moyu',
-    stealth = { lines = 8, keys_per_step = 3 },
+    stealth = { lines = 4, keys_per_step = 3 },
     width = 0.65,
     height = 0.7,
     border = 'rounded',
@@ -50,8 +50,11 @@ CONFIGURATION                                                  *moyu-setup*
 The default library is ~/Books/moyu, separate from the plugin installation.
 Create this directory and put your books there. Repository books/ contains
 only an optional demonstration text; copy it into your library to try it.
-Each segment defaults to 8 display lines. Small windows automatically use
-the available space above or below the cursor, with no skipped book text.
+Each segment defaults to 4 short comments, spread from top to bottom across
+visible code lines. Each comment uses up to 40 display cells and follows the
+code indentation. Anchors stay stable when turning pages. Small windows and
+buffers with few code lines show fewer comments, without stacking a block
+or skipping book text.
 Use +/= and - to change the desired line count without moving in the book.
 This preference survives restarts unless stealth.lines is set explicitly.
 

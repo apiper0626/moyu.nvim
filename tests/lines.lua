@@ -1,5 +1,8 @@
 vim.opt.rtp:prepend(vim.fn.getcwd())
 local reader = require('moyu')
+local code = {}
+for index = 1, 100 do code[index] = 'local value = ' .. index end
+vim.api.nvim_buf_set_lines(0, 0, -1, false, code)
 local directory = vim.fn.stdpath('data')
 vim.fn.mkdir(directory, 'p')
 local path = directory .. '/lines.txt'
@@ -16,17 +19,17 @@ local function saved()
 end
 local function rows()
   local ns = vim.api.nvim_get_namespaces()['moyu.stealth']
-  return #vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })[1][4].virt_lines
+  return #vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })
 end
 reader.stealth(path)
 local position = saved().books[path].stealth
 press('=+')
-assert(rows() == 10 and saved().settings.lines == 10)
+assert(rows() == 6 and saved().settings.lines == 6)
 assert(original_calls == 0 and vim.deep_equal(saved().books[path].stealth, position))
 press('-')
-assert(rows() == 9)
+assert(rows() == 5)
 press('j')
-assert(saved().books[path].line == 10, 'advance must follow adjusted segment size')
+assert(saved().books[path].line == 6, 'advance must follow adjusted segment size')
 for _ = 1, 12 do press('-') end
 assert(rows() == 1 and saved().settings.lines == 1)
 press('==')

@@ -11,7 +11,7 @@ local function page(s, limit)
   local cursor = position(s.pos)
   local rows = {}
   local info = vim.fn.getwininfo(s.win)[1]
-  local width = math.max(1, vim.api.nvim_win_get_width(s.win) - (info and info.textoff or 0) - 6)
+  local width = math.min(40, math.max(1, vim.api.nvim_win_get_width(s.win) - (info and info.textoff or 0) - 6))
   local prefix, suffix = s.comment:match('^(.-)%%s(.*)$')
   prefix, suffix = prefix or '// ', suffix or ''
   width = math.max(1, width - vim.fn.strdisplaywidth(prefix .. suffix))
@@ -33,22 +33,52 @@ local function page(s, limit)
   return rows, cursor
 end
 
+-- Screen rows of the visible lines, so reading rows can sit between code rows.
+local function visible(win)
+  local first = vim.api.nvim_win_call(win, function() return vim.fn.line('w0') end)
+  local last = vim.api.nvim_win_call(win, function() return vim.fn.line('w$') end)
+  local top = vim.fn.screenpos(win, first, 1).row
+  local map = {}
+  if top == 0 then return map end
+  for line = first, last do
+    local row = vim.fn.screenpos(win, line, 1).row
+    if row > 0 then map[#map + 1] = { line = line, row = row - top } end
+  end
+  return map
+end
+
+-- Choose stable, ordered anchors across the viewport before adding virtual rows.
+-- Reserve screen space for both the reading rows and the original code.
 local function draw()
   local s = session
   if not s or not vim.api.nvim_buf_is_valid(s.buf) or not vim.api.nvim_win_is_valid(s.win) then return end
   vim.api.nvim_buf_clear_namespace(s.buf, ns, 0, -1)
-  s.anchor = vim.api.nvim_win_get_cursor(s.win)[1] - 1
-  local cursor_row = vim.api.nvim_win_call(s.win, function() return vim.fn.winline() end)
+  vim.cmd('redraw')
+  local map = visible(s.win)
   local height = vim.api.nvim_win_get_height(s.win)
-  local below, above = math.max(0, height - cursor_row), math.max(0, cursor_row - 1)
-  s.above = below < s.options.lines and above > below
-  s.page_lines = math.max(1, math.min(s.options.lines, s.above and above or below))
+  local count = math.max(1, math.min(s.options.lines, #map, math.floor((height + 1) / 3)))
+  -- Only anchor in the part of the viewport that remains visible after insertion.
+  local candidates = {}
+  for _, item in ipairs(map) do
+    if item.row < height - count then candidates[#candidates + 1] = item end
+  end
+  count = math.max(1, math.min(count, #candidates))
+  s.page_lines = count
   local rows, next_pos = page(s)
-  s.next_pos = next_pos
-  s.rendered_lines = #rows
-  vim.api.nvim_buf_set_extmark(s.buf, ns, s.anchor, 0, {
-    virt_lines = rows, virt_lines_above = s.above,
-  })
+  s.next_pos, s.rendered_lines = next_pos, #rows
+  for index, row in ipairs(rows) do
+    local slot = #rows == 1 and 1 or 1 + math.floor((index - 1) * (#candidates - 1) / (#rows - 1))
+    local item = candidates[slot]
+    local line = item and item.line or vim.api.nvim_win_get_cursor(s.win)[1]
+    local code = vim.api.nvim_buf_get_lines(s.buf, line - 1, line, false)[1] or ''
+    -- Keep the surrounding code's indentation without consuming excessive width.
+    local indent = code:match('^%s*') or ''
+    if vim.fn.strdisplaywidth(indent) > 8 then indent = '' end
+    row[1][1] = indent .. row[1][1]
+    vim.api.nvim_buf_set_extmark(s.buf, ns, line - 1, 0, {
+      virt_lines = { row }, virt_lines_above = true,
+    })
+  end
 end
 
 function M.active() return session ~= nil end
@@ -137,7 +167,7 @@ function M.open(lines, pos, options, persist, actions)
   local s = { buf = buffer, win = window, lines = lines, pos = { line = line, char = char },
     options = options, persist = persist, keys = {}, maps = vim.api.nvim_buf_get_keymap(buffer, 'n'),
     modifiable = vim.bo[buffer].modifiable, comment = vim.bo[buffer].commentstring,
-    anchor = vim.api.nvim_win_get_cursor(window)[1] - 1, history = {}, presses = 0, actions = actions or {} }
+    history = {}, presses = 0, actions = actions or {} }
   session = s
   for _, map in ipairs(s.maps) do vim.keymap.del('n', map.lhs, { buffer = buffer }) end
   vim.bo[buffer].modifiable = false
