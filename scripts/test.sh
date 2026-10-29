@@ -18,7 +18,7 @@ run lines_restore
 export XDG_DATA_HOME="$test_root/layout"
 run layout
 run layout_restore
-for test in mode formats library viewport background; do
+for test in mode formats library viewport background background_pin; do
   export XDG_DATA_HOME="$test_root/$test"
   run "$test"
 done

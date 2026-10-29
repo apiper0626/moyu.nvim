@@ -107,6 +107,20 @@ function M.toggle_layout()
   return value
 end
 
+function M.toggle_background_pin()
+  local s = session
+  if not s then return end
+  if not s.background then
+    vim.api.nvim_echo({ { '背景轮换已在配置中关闭', 'Comment' } }, false, {})
+    return
+  end
+  s.pinned, s.presses = not s.pinned, 0
+  local message = s.pinned and ('已固定背景：' .. vim.fn.fnamemodify(vim.api.nvim_buf_get_name(s.buf), ':t'))
+    or '已取消固定，下一段恢复背景轮换'
+  vim.api.nvim_echo({ { message, 'Comment' } }, false, {})
+  return s.pinned
+end
+
 function M.adjust_lines(delta)
   local s = session
   if not s then return end
@@ -166,11 +180,12 @@ local function attach_buffer(s)
   for _, key in ipairs({ '-', '<kMinus>' }) do bind(key, function() M.adjust_lines(-1) end) end
   if s.actions.history then bind('<F2>', s.actions.history) end
   bind('<F3>', M.toggle_layout)
+  bind('<F4>', M.toggle_background_pin)
   bind('<leader>my', M.close)
 end
 
 local function change_background(s)
-  if not s.background then return end
+  if not s.background or s.pinned then return end
   s.switching = true
   local ok, buffer = pcall(s.background.next, s.background, s.buf)
   if ok and buffer and buffer ~= s.buf then
@@ -245,7 +260,7 @@ function M.open(lines, pos, options, persist, actions)
   local char = math.max(0, math.min(vim.fn.strchars(lines[line] or ''), tonumber(pos.char) or 0))
   local s = { buf = buffer, win = window, lines = lines, pos = { line = line, char = char },
     options = options, persist = persist,
-    history = {}, presses = 0, actions = actions or {} }
+    history = {}, presses = 0, pinned = false, actions = actions or {} }
   if options.background ~= false then s.background = require('moyu.background').new(window, buffer) end
   session = s
   attach_buffer(s)

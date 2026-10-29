@@ -29,6 +29,7 @@ During Moyu Mode:
   k, Up, Backspace, Ctrl-U   Previous segment.
   F2                        Reading history.
   F3                        Toggle concentrated / spread layout; remember choice.
+  F4                        Pin / unpin the current background code file.
   +, =, keypad +            Increase visible lines by one.
   -, keypad -               Decrease visible lines by one (minimum one).
   Other printable ASCII     Advance every three presses (configurable).
@@ -75,6 +76,13 @@ Exit and auto-hide restore the initial buffer, cursor and viewport. Unsaved
 code, original buffer mappings and modifiable settings are preserved; clean
 buffers loaded only for rotation are removed. Set stealth.background=false
 to disable rotation. Floating reading does not rotate code files.
+
+Press F4 inside Moyu Mode to pin the current background file. Reading keeps
+advancing without changing code files; press F4 again to resume rotation on
+the next segment. Layout and line-count changes keep the pin. The pin lasts
+only for the current session and clears on exit or auto-hide. The temporary
+buffer-local F4 mapping restores the original mapping on exit. If rotation
+is disabled in configuration, F4 reports that setting without enabling it.
 
 PROGRESS                                                       *moyu-progress*
 
