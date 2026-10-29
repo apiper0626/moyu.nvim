@@ -180,7 +180,7 @@ local function attach_buffer(s)
   for _, key in ipairs({ '-', '<kMinus>' }) do bind(key, function() M.adjust_lines(-1) end) end
   if s.actions.history then bind('<F2>', s.actions.history) end
   bind('<F3>', M.toggle_layout)
-  bind('<F4>', M.toggle_background_pin)
+  bind('<leader>mp', M.toggle_background_pin)
   bind('<leader>my', M.close)
 end
 
