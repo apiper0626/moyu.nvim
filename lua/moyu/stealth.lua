@@ -118,12 +118,7 @@ function M.adjust_lines(delta)
   return value
 end
 
-function M.close()
-  local s = session
-  if not s then return end
-  session = nil
-  vim.api.nvim_del_augroup_by_id(s.group)
-  if s.restore_status then s.restore_status() end
+local function detach_buffer(s)
   if vim.api.nvim_buf_is_valid(s.buf) then
     vim.api.nvim_buf_clear_namespace(s.buf, ns, 0, -1)
     for _, lhs in ipairs(s.keys) do pcall(vim.keymap.del, 'n', lhs, { buffer = s.buf }) end
@@ -136,6 +131,65 @@ function M.close()
     end
     vim.bo[s.buf].modifiable = s.modifiable
   end
+end
+
+local function attach_buffer(s)
+  local buffer = s.buf
+  s.keys, s.maps = {}, vim.api.nvim_buf_get_keymap(s.buf, 'n')
+  s.modifiable, s.comment = vim.bo[s.buf].modifiable, vim.bo[s.buf].commentstring
+  for _, map in ipairs(s.maps) do vim.keymap.del('n', map.lhs, { buffer = buffer }) end
+  vim.bo[buffer].modifiable = false
+  local function bind(key, callback, nowait)
+    s.keys[#s.keys + 1] = key
+    vim.keymap.set('n', key, callback, { buffer = buffer, nowait = nowait ~= false, silent = true })
+  end
+  local function type_key()
+    s.presses = s.presses + 1
+    if s.presses >= s.options.keys_per_step then s.presses = 0; M.next() end
+  end
+  for code = 32, 126 do
+    local key = string.char(code)
+    bind(key == '<' and '<lt>' or key, type_key, key ~= (vim.g.mapleader or '\\'))
+  end
+  for code = 1, 26 do
+    local key = '<C-' .. string.char(96 + code) .. '>'
+    bind(key, function() end)
+  end
+  for _, key in ipairs({ '<Esc>', '<C-c>', '<C-[>' }) do bind(key, M.close) end
+  for _, key in ipairs({ 'k', '<BS>', '<Left>', '<Up>', '<PageUp>', '<C-b>', '<C-u>', '<ScrollWheelUp>' }) do
+    bind(key, M.previous)
+  end
+  for _, key in ipairs({ 'j', '<CR>', '<Tab>', '<Right>', '<Down>', '<PageDown>', '<C-f>', '<C-d>', '<ScrollWheelDown>' }) do
+    bind(key, M.next)
+  end
+  for _, key in ipairs({ '+', '=', '<kPlus>' }) do bind(key, function() M.adjust_lines(1) end) end
+  for _, key in ipairs({ '-', '<kMinus>' }) do bind(key, function() M.adjust_lines(-1) end) end
+  if s.actions.history then bind('<F2>', s.actions.history) end
+  bind('<F3>', M.toggle_layout)
+  bind('<leader>my', M.close)
+end
+
+local function change_background(s)
+  if not s.background then return end
+  s.switching = true
+  local ok, buffer = pcall(s.background.next, s.background, s.buf)
+  if ok and buffer and buffer ~= s.buf then
+    detach_buffer(s)
+    s.background:show(buffer)
+    s.buf = vim.api.nvim_win_get_buf(s.win)
+    attach_buffer(s)
+  end
+  s.switching = false
+end
+
+function M.close()
+  local s = session
+  if not s then return end
+  session = nil
+  vim.api.nvim_del_augroup_by_id(s.group)
+  if s.restore_status then s.restore_status() end
+  detach_buffer(s)
+  if s.background then s.background:restore() end
   s.persist(position(s.pos))
   vim.api.nvim_exec_autocmds('User', { pattern = 'MoyuModeChanged', data = { active = false, buffer = s.buf } })
 end
@@ -146,6 +200,7 @@ function M.next()
   if not s or s.next_pos.line > #s.lines then return end
   s.history[#s.history + 1] = position(s.pos)
   s.pos = position(s.next_pos)
+  change_background(s)
   draw()
   s.persist(position(s.pos))
 end
@@ -189,43 +244,16 @@ function M.open(lines, pos, options, persist, actions)
   local line = math.max(1, math.min(#lines, tonumber(pos.line) or 1))
   local char = math.max(0, math.min(vim.fn.strchars(lines[line] or ''), tonumber(pos.char) or 0))
   local s = { buf = buffer, win = window, lines = lines, pos = { line = line, char = char },
-    options = options, persist = persist, keys = {}, maps = vim.api.nvim_buf_get_keymap(buffer, 'n'),
-    modifiable = vim.bo[buffer].modifiable, comment = vim.bo[buffer].commentstring,
+    options = options, persist = persist,
     history = {}, presses = 0, actions = actions or {} }
+  if options.background ~= false then s.background = require('moyu.background').new(window, buffer) end
   session = s
-  for _, map in ipairs(s.maps) do vim.keymap.del('n', map.lhs, { buffer = buffer }) end
-  vim.bo[buffer].modifiable = false
-  local function bind(key, callback, nowait)
-    s.keys[#s.keys + 1] = key
-    vim.keymap.set('n', key, callback, { buffer = buffer, nowait = nowait ~= false, silent = true })
-  end
-  local function type_key()
-    s.presses = s.presses + 1
-    if s.presses >= options.keys_per_step then s.presses = 0; M.next() end
-  end
-  for code = 32, 126 do
-    local key = string.char(code)
-    bind(key == '<' and '<lt>' or key, type_key, key ~= (vim.g.mapleader or '\\'))
-  end
-  for code = 1, 26 do
-    local key = '<C-' .. string.char(96 + code) .. '>'
-    bind(key, function() end)
-  end
-  for _, key in ipairs({ '<Esc>', '<C-c>', '<C-[>' }) do bind(key, M.close) end
-  for _, key in ipairs({ 'k', '<BS>', '<Left>', '<Up>', '<PageUp>', '<C-b>', '<C-u>', '<ScrollWheelUp>' }) do
-    bind(key, M.previous)
-  end
-  for _, key in ipairs({ 'j', '<CR>', '<Tab>', '<Right>', '<Down>', '<PageDown>', '<C-f>', '<C-d>', '<ScrollWheelDown>' }) do
-    bind(key, M.next)
-  end
-  for _, key in ipairs({ '+', '=', '<kPlus>' }) do bind(key, function() M.adjust_lines(1) end) end
-  for _, key in ipairs({ '-', '<kMinus>' }) do bind(key, function() M.adjust_lines(-1) end) end
-  if actions and actions.history then bind('<F2>', actions.history) end
-  bind('<F3>', M.toggle_layout)
-  bind('<leader>my', M.close)
+  attach_buffer(s)
   s.group = vim.api.nvim_create_augroup('MoyuStealthSession', { clear = true })
   vim.api.nvim_create_autocmd({ 'BufLeave', 'WinLeave', 'BufWipeout', 'InsertEnter', 'CmdlineEnter' }, {
-    group = s.group, buffer = buffer, callback = M.close,
+    group = s.group, callback = function(event)
+      if not s.switching and event.buf == s.buf then M.close() end
+    end,
   })
   vim.api.nvim_create_autocmd({ 'FocusLost', 'VimLeavePre' }, { group = s.group, callback = M.close })
   vim.api.nvim_create_autocmd('VimResized', { group = s.group, callback = draw })

@@ -56,6 +56,7 @@ UTF-8 TXT 不依赖 Python；EPUB、HTML、DOCX、ODT、FB2 不需要 Calibre、
     stealth = {
       lines = 4,         -- 默认每段 4 行；小窗口按可用空间自动缩减
       keys_per_step = 3, -- 每敲几次可打印 ASCII 键推进一段
+      background = true, -- 下一段时自动切换背景代码文件；false 关闭
       -- layout = 'block', -- 可选：指定启动布局，block 集中 / spread 分散
     },
   },
@@ -104,6 +105,10 @@ mkdir -p ~/Books/moyu
 | `-`（或小键盘 `-`） | 显示行数减少 1，最少 1 行 |
 
 `:Moyu [路径]` 搜书或直接进入；`:MoyuToggle` 继续上次阅读或退出；`:MoyuClose` 保存并退出；`:MoyuBooks` 搜书换书。到达末尾会停留在最后一段。模式会记录段落内的字符位置，可以从长段落中间继续。
+
+默认每次推进到下一段，背景会轮换到另一个代码文件，正文阅读进度继续。候选来自已打开的普通代码缓冲区，以及当前代码所在项目附近的源码文件；目录扫描最多向下 3 层、检查 2000 个条目、保留约 40 个候选，跳过隐藏目录及 `node_modules`、`target`、`dist`、`build`、`vendor` 等目录。没有其他可用代码文件时保持当前背景；未命名缓冲区不扫描目录。回翻正文、调整行数、切换布局不会换背景，到达书末也不再切换。
+
+背景轮换仅在 Moyu Mode 内生效，不增加快捷键。退出或自动隐藏时回到进入前的文件、光标和视口，恢复各文件原映射及可编辑状态，保留未保存的代码；临时加载且未修改的背景缓冲区会清理。可设置 `stealth.background = false` 关闭轮换。浮窗阅读不轮换代码。
 
 模式开启时在当前窗口状态栏显示“鱼”，兼容普通及表达式状态栏（例如 lualine），自动隐藏时同时清除标记。程序可调用 `require('moyu').is_active()` 查询状态，`require('moyu').status()` 获取“鱼”或空字符串；进入和退出会触发 `User MoyuModeChanged`，事件数据为 `{ active = true/false, buffer = 缓冲区编号 }`。
 

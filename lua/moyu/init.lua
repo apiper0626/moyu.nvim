@@ -4,7 +4,7 @@ local state = { books = {} }
 local win, buf, current
 local state_file
 local stealth = require('moyu.stealth')
-local stealth_options = { lines = 4, keys_per_step = 3, layout = 'block' }
+local stealth_options = { lines = 4, keys_per_step = 3, layout = 'block', background = true }
 local formats = require('moyu.formats')
 local request, pending = 0, nil
 local progress_info = require('moyu.progress')
@@ -75,6 +75,7 @@ function M.setup(opts)
     local value = stealth_options[key]
     assert(type(value) == 'number' and value >= 1 and value % 1 == 0, 'stealth.' .. key .. ' 必须是正整数')
   end
+  assert(type(stealth_options.background) == 'boolean', 'stealth.background 必须是布尔值')
   assert(stealth_options.layout == 'block' or stealth_options.layout == 'spread',
     'stealth.layout 必须是 block（集中）或 spread（分散）')
 end

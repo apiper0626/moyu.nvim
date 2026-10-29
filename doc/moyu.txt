@@ -41,7 +41,7 @@ CONFIGURATION                                                  *moyu-setup*
 >
   require('moyu').setup({
     book_dir = '~/Books/moyu',
-    stealth = { lines = 4, keys_per_step = 3 },
+    stealth = { lines = 4, keys_per_step = 3, background = true },
     width = 0.65,
     height = 0.7,
     border = 'rounded',
@@ -63,6 +63,18 @@ The layout choice also survives restarts. Set stealth.layout to 'block' or
 buffer-local mapping during Moyu Mode; exit and auto-hide restore the
 original mapping. Normal editing and floating reading have no F3 binding
 installed by the plugin.
+
+Background code rotates to another file on each next segment, only in Moyu
+Mode. Candidates include open code buffers and nearby project source files.
+Discovery is bounded to 3 directory levels, 2000 entries and about 40 files,
+skipping hidden directories and common dependency/build directories. Unnamed
+buffers do not trigger directory scanning. Without another readable code
+file, the current background stays. Previous segment, layout/line changes
+and attempts to advance past the book's end do not rotate the background.
+Exit and auto-hide restore the initial buffer, cursor and viewport. Unsaved
+code, original buffer mappings and modifiable settings are preserved; clean
+buffers loaded only for rotation are removed. Set stealth.background=false
+to disable rotation. Floating reading does not rotate code files.
 
 PROGRESS                                                       *moyu-progress*
 
