@@ -28,6 +28,7 @@ During Moyu Mode:
   j, Down, Enter, Ctrl-D     Next segment.
   k, Up, Backspace, Ctrl-U   Previous segment.
   F2                        Reading history.
+  F3                        Toggle concentrated / spread layout; remember choice.
   +, =, keypad +            Increase visible lines by one.
   -, keypad -               Decrease visible lines by one (minimum one).
   Other printable ASCII     Advance every three presses (configurable).
@@ -50,13 +51,18 @@ CONFIGURATION                                                  *moyu-setup*
 The default library is ~/Books/moyu, separate from the plugin installation.
 Create this directory and put your books there. Repository books/ contains
 only an optional demonstration text; copy it into your library to try it.
-Each segment defaults to 4 short comments, spread from top to bottom across
-visible code lines. Each comment uses up to 40 display cells and follows the
-code indentation. Anchors stay stable when turning pages. Small windows and
-buffers with few code lines show fewer comments, without stacking a block
-or skipping book text.
+The initial layout is concentrated: up to 4 consecutive comment rows near
+the cursor. Press F3 inside Moyu Mode to switch to spread comments across
+visible code lines. Spread comments use up to 40 display cells and follow
+the code indentation. Small windows and buffers with few code lines show
+fewer spread comments without skipping book text.
 Use +/= and - to change the desired line count without moving in the book.
 This preference survives restarts unless stealth.lines is set explicitly.
+The layout choice also survives restarts. Set stealth.layout to 'block' or
+'spread' to override the saved startup layout. F3 only has a temporary
+buffer-local mapping during Moyu Mode; exit and auto-hide restore the
+original mapping. Normal editing and floating reading have no F3 binding
+installed by the plugin.
 
 PROGRESS                                                       *moyu-progress*
 

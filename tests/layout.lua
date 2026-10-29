@@ -1,0 +1,63 @@
+vim.opt.rtp:prepend(vim.fn.getcwd())
+local reader = require('moyu')
+local stealth = require('moyu.stealth')
+local directory = vim.fn.stdpath('data')
+vim.fn.mkdir(directory, 'p')
+local path = directory .. '/layout.txt'
+local paragraphs, code = {}, {}
+for index = 1, 100 do
+  paragraphs[index] = '第 ' .. index .. ' 段'
+  code[index] = 'local value = ' .. index
+end
+vim.fn.writefile(paragraphs, path)
+vim.api.nvim_buf_set_lines(0, 0, -1, false, code)
+local function press(key)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'xt', false)
+end
+local function marks()
+  return vim.api.nvim_buf_get_extmarks(0, vim.api.nvim_create_namespace('moyu.stealth'), 0, -1, { details = true })
+end
+local function saved()
+  return vim.json.decode(table.concat(vim.fn.readfile(directory .. '/moyu/progress.json'), '\n'))
+end
+local global_calls, local_calls = 0, 0
+vim.keymap.set('n', '<F3>', function() global_calls = global_calls + 1 end)
+vim.keymap.set('n', '<F3>', function() local_calls = local_calls + 1 end, { buffer = 0, desc = 'original F3' })
+assert(stealth.toggle_layout() == nil, 'layout switching must be inactive outside Moyu Mode')
+press('<F3>')
+assert(local_calls == 1)
+reader.stealth(path)
+assert(#marks() == 1 and #marks()[1][4].virt_lines == 4, 'default layout must be concentrated')
+local before = saved().books[path].stealth
+press('ab')
+press('<F3>')
+assert(#marks() == 4 and saved().settings.layout == 'spread')
+assert(vim.deep_equal(before, saved().books[path].stealth), 'switching layout must preserve the reading position')
+assert(local_calls == 1 and global_calls == 0, 'F3 must use only the temporary mode mapping')
+press('c')
+assert(vim.deep_equal(before, saved().books[path].stealth), 'switching must reset partial typing counts')
+press('j')
+assert(saved().books[path].line == before.line + 4, 'spread navigation must consume the displayed page')
+press('<F3>')
+assert(#marks() == 1 and saved().settings.layout == 'block')
+press('k')
+assert(vim.deep_equal(before, saved().books[path].stealth), 'backtracking must work after switching layouts')
+press('<F3>')
+press('<Esc>')
+assert(not reader.is_active() and #marks() == 0)
+assert(vim.fn.maparg('<F3>', 'n', false, true).desc == 'original F3')
+press('<F3>')
+assert(local_calls == 2, 'exit must restore the original buffer mapping')
+vim.keymap.del('n', '<F3>', { buffer = 0 })
+reader.toggle()
+assert(#marks() == 4, 'reopening should remember the selected layout')
+vim.api.nvim_exec_autocmds('FocusLost', {})
+press('<F3>')
+assert(global_calls == 1, 'auto-hide must reveal the original global mapping')
+assert(vim.deep_equal(code, vim.api.nvim_buf_get_lines(0, 0, -1, false)))
+reader.open(path)
+press('<F3>')
+assert(global_calls == 2 and not stealth.active(), 'floating mode must not install the layout shortcut')
+reader.close()
+print('PASS: 默认集中、模式内切换、位置保持、快捷键隔离及退出恢复')
+vim.cmd('qa!')

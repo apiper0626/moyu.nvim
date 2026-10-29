@@ -1,6 +1,7 @@
 vim.opt.rtp:prepend(vim.fn.getcwd())
 local reader = require('moyu')
 local stealth = require('moyu.stealth')
+reader.setup({ stealth = { layout = 'spread' } })
 local directory = vim.fn.stdpath('data')
 vim.fn.mkdir(directory, 'p')
 local path = directory .. '/viewport.txt'
@@ -62,7 +63,7 @@ reader.close()
 -- Short comments wrap Chinese paragraphs without losing UTF-8 characters.
 local saved
 local paragraph = string.rep('天地玄黄宇宙洪荒', 20)
-stealth.open({ paragraph }, { line = 1, char = 0 }, { lines = 4, keys_per_step = 3 }, function(pos) saved = pos end)
+stealth.open({ paragraph }, { line = 1, char = 0 }, { lines = 4, keys_per_step = 3, layout = 'spread' }, function(pos) saved = pos end)
 local text = rows()[1][1][1]
 assert(vim.fn.strdisplaywidth(text) <= 42, 'comments should stay short, including indentation')
 local first = text

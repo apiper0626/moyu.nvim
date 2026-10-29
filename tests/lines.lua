@@ -19,7 +19,11 @@ local function saved()
 end
 local function rows()
   local ns = vim.api.nvim_get_namespaces()['moyu.stealth']
-  return #vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })
+  local count = 0
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })) do
+    count = count + #mark[4].virt_lines
+  end
+  return count
 end
 reader.stealth(path)
 local position = saved().books[path].stealth

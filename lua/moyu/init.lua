@@ -4,12 +4,13 @@ local state = { books = {} }
 local win, buf, current
 local state_file
 local stealth = require('moyu.stealth')
-local stealth_options = { lines = 4, keys_per_step = 3 }
+local stealth_options = { lines = 4, keys_per_step = 3, layout = 'block' }
 local formats = require('moyu.formats')
 local request, pending = 0, nil
 local progress_info = require('moyu.progress')
 local current_lines
 local configured_lines = false
+local configured_layout = false
 
 local function valid_win() return win and vim.api.nvim_win_is_valid(win) end
 local function notify(message) vim.notify(message, vim.log.levels.WARN, { title = 'moyu.nvim' }) end
@@ -24,6 +25,10 @@ local function load()
   local lines = type(state.settings) == 'table' and state.settings.lines or nil
   if not configured_lines and type(lines) == 'number' and lines >= 1 and lines % 1 == 0 then
     stealth_options.lines = lines
+  end
+  local layout = type(state.settings) == 'table' and state.settings.layout or nil
+  if not configured_layout and (layout == 'block' or layout == 'spread') then
+    stealth_options.layout = layout
   end
 end
 
@@ -59,6 +64,7 @@ end
 function M.setup(opts)
   opts = vim.deepcopy(opts or {})
   if opts.stealth and opts.stealth.lines ~= nil then configured_lines = true end
+  if opts.stealth and opts.stealth.layout ~= nil then configured_layout = true end
   stealth_options = vim.tbl_extend('force', stealth_options, opts.stealth or {})
   opts.stealth = nil
   config = vim.tbl_extend('force', config, opts or {})
@@ -69,6 +75,8 @@ function M.setup(opts)
     local value = stealth_options[key]
     assert(type(value) == 'number' and value >= 1 and value % 1 == 0, 'stealth.' .. key .. ' 必须是正整数')
   end
+  assert(stealth_options.layout == 'block' or stealth_options.layout == 'spread',
+    'stealth.layout 必须是 block（集中）或 spread（分散）')
 end
 
 function M.close()
@@ -117,6 +125,11 @@ function M.stealth(path)
       lines_changed = function(value)
         state.settings = type(state.settings) == 'table' and state.settings or {}
         state.settings.lines = value
+        save()
+      end,
+      layout_changed = function(value)
+        state.settings = type(state.settings) == 'table' and state.settings or {}
+        state.settings.layout = value
         save()
       end,
     })

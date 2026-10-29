@@ -5,7 +5,13 @@ for index = 1, 100 do code[index] = 'local value = ' .. index end
 vim.api.nvim_buf_set_lines(0, 0, -1, false, code)
 reader.toggle()
 local ns = vim.api.nvim_get_namespaces()['moyu.stealth']
-local function rows() return #vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true }) end
+local function rows()
+  local count = 0
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })) do
+    count = count + #mark[4].virt_lines
+  end
+  return count
+end
 assert(rows() == 3, 'changed line count should survive a restart')
 reader.close()
 reader.setup({ stealth = { lines = 5 } })

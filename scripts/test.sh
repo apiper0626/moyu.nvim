@@ -15,6 +15,9 @@ run history_restore
 export XDG_DATA_HOME="$test_root/lines"
 run lines
 run lines_restore
+export XDG_DATA_HOME="$test_root/layout"
+run layout
+run layout_restore
 for test in mode formats library viewport; do
   export XDG_DATA_HOME="$test_root/$test"
   run "$test"

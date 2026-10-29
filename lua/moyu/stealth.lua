@@ -11,7 +11,8 @@ local function page(s, limit)
   local cursor = position(s.pos)
   local rows = {}
   local info = vim.fn.getwininfo(s.win)[1]
-  local width = math.min(40, math.max(1, vim.api.nvim_win_get_width(s.win) - (info and info.textoff or 0) - 6))
+  local width = math.max(1, vim.api.nvim_win_get_width(s.win) - (info and info.textoff or 0) - 6)
+  if s.options.layout == 'spread' then width = math.min(40, width) end
   local prefix, suffix = s.comment:match('^(.-)%%s(.*)$')
   prefix, suffix = prefix or '// ', suffix or ''
   width = math.max(1, width - vim.fn.strdisplaywidth(prefix .. suffix))
@@ -54,8 +55,20 @@ local function draw()
   if not s or not vim.api.nvim_buf_is_valid(s.buf) or not vim.api.nvim_win_is_valid(s.win) then return end
   vim.api.nvim_buf_clear_namespace(s.buf, ns, 0, -1)
   vim.cmd('redraw')
-  local map = visible(s.win)
   local height = vim.api.nvim_win_get_height(s.win)
+  if s.options.layout ~= 'spread' then
+    local cursor_row = vim.api.nvim_win_call(s.win, function() return vim.fn.winline() end)
+    local below, above = math.max(0, height - cursor_row), math.max(0, cursor_row - 1)
+    local use_above = below < s.options.lines and above > below
+    s.page_lines = math.max(1, math.min(s.options.lines, use_above and above or below))
+    local rows, next_pos = page(s)
+    s.next_pos, s.rendered_lines = next_pos, #rows
+    vim.api.nvim_buf_set_extmark(s.buf, ns, vim.api.nvim_win_get_cursor(s.win)[1] - 1, 0, {
+      virt_lines = rows, virt_lines_above = use_above,
+    })
+    return
+  end
+  local map = visible(s.win)
   local count = math.max(1, math.min(s.options.lines, #map, math.floor((height + 1) / 3)))
   -- Only anchor in the part of the viewport that remains visible after insertion.
   local candidates = {}
@@ -82,6 +95,17 @@ local function draw()
 end
 
 function M.active() return session ~= nil end
+
+function M.toggle_layout()
+  local s = session
+  if not s then return end
+  local value = s.options.layout == 'spread' and 'block' or 'spread'
+  s.options.layout, s.presses = value, 0
+  draw()
+  if s.actions.layout_changed then s.actions.layout_changed(value) end
+  vim.api.nvim_echo({ { '阅读布局：' .. (value == 'spread' and '分散' or '集中'), 'Comment' } }, false, {})
+  return value
+end
 
 function M.adjust_lines(delta)
   local s = session
@@ -197,6 +221,7 @@ function M.open(lines, pos, options, persist, actions)
   for _, key in ipairs({ '+', '=', '<kPlus>' }) do bind(key, function() M.adjust_lines(1) end) end
   for _, key in ipairs({ '-', '<kMinus>' }) do bind(key, function() M.adjust_lines(-1) end) end
   if actions and actions.history then bind('<F2>', actions.history) end
+  bind('<F3>', M.toggle_layout)
   bind('<leader>my', M.close)
   s.group = vim.api.nvim_create_augroup('MoyuStealthSession', { clear = true })
   vim.api.nvim_create_autocmd({ 'BufLeave', 'WinLeave', 'BufWipeout', 'InsertEnter', 'CmdlineEnter' }, {
